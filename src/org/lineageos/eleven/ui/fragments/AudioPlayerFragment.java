@@ -144,8 +144,6 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
 
     private long mSelectedId = -1;
 
-    private boolean mIsPaused = false;
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -242,19 +240,9 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
 
         // pause the update callback for the play pause progress button
         mPlayPauseProgressButton.pause();
+        mTimeHandler.removeMessages(REFRESH_TIME);
 
         mImageFetcher.flush();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        mIsPaused = false;
-        mTimeHandler.removeMessages(REFRESH_TIME);
-        // Unbind from the service
-        MusicUtils.unbindFromService(mToken);
-        mToken = null;
 
         // Unregister the receiver
         try {
@@ -262,6 +250,15 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
         } catch (final Throwable e) {
             //$FALL-THROUGH$
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        // Unbind from the service
+        MusicUtils.unbindFromService(mToken);
+        mToken = null;
     }
 
     /**
@@ -478,11 +475,9 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
      * @param delay When to update
      */
     private void queueNextRefresh(final long delay) {
-        if (!mIsPaused) {
-            final Message message = mTimeHandler.obtainMessage(REFRESH_TIME);
-            mTimeHandler.removeMessages(REFRESH_TIME);
-            mTimeHandler.sendMessageDelayed(message, delay);
-        }
+        final Message message = mTimeHandler.obtainMessage(REFRESH_TIME);
+        mTimeHandler.removeMessages(REFRESH_TIME);
+        mTimeHandler.sendMessageDelayed(message, delay);
     }
 
     /**
