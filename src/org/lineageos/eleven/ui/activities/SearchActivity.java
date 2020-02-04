@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.TreeSet;
 
 import static android.view.View.OnTouchListener;
-import static org.lineageos.eleven.utils.MusicUtils.mService;
 
 /**
  * Provides the search interface for Eleven.
@@ -87,8 +86,7 @@ import static org.lineageos.eleven.utils.MusicUtils.mService;
  */
 public class SearchActivity extends FragmentActivity implements
         LoaderCallbacks<SectionListContainer<SearchResult>>,
-        OnScrollListener, OnQueryTextListener, OnItemClickListener, ServiceConnection,
-        OnTouchListener {
+        OnScrollListener, OnQueryTextListener, OnItemClickListener, OnTouchListener {
     /**
      * Intent extra for identifying the search type to filter for
      */
@@ -262,7 +260,7 @@ public class SearchActivity extends FragmentActivity implements
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Bind Eleven's service
-        mToken = MusicUtils.bindToService(this, this);
+        mToken = MusicUtils.bindToService(this, null);
 
         // Set the layout
         setContentView(R.layout.activity_search);
@@ -463,10 +461,8 @@ public class SearchActivity extends FragmentActivity implements
     protected void onDestroy() {
         super.onDestroy();
         // Unbind from the service
-        if (mService != null) {
-            MusicUtils.unbindFromService(mToken);
-            mToken = null;
-        }
+        MusicUtils.unbindFromService(mToken);
+        mToken = null;
     }
 
     /**
@@ -673,22 +669,6 @@ public class SearchActivity extends FragmentActivity implements
                     break;
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onServiceConnected(final ComponentName name, final IBinder service) {
-        mService = IElevenService.Stub.asInterface(service);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onServiceDisconnected(final ComponentName name) {
-        mService = null;
     }
 
     /**

@@ -70,8 +70,6 @@ import org.lineageos.eleven.widgets.VisualizerView;
 
 import java.lang.ref.WeakReference;
 
-import static org.lineageos.eleven.utils.MusicUtils.mService;
-
 public class AudioPlayerFragment extends Fragment implements ServiceConnection {
     private static final String TAG = AudioPlayerFragment.class.getSimpleName();
 
@@ -255,10 +253,8 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
         mIsPaused = false;
         mTimeHandler.removeMessages(REFRESH_TIME);
         // Unbind from the service
-        if (mService != null) {
-            MusicUtils.unbindFromService(mToken);
-            mToken = null;
-        }
+        MusicUtils.unbindFromService(mToken);
+        mToken = null;
 
         // Unregister the receiver
         try {
@@ -497,9 +493,6 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
      * @param forwards Whether it was seeking forwards or backwards
      */
     private void seekRelative(final int repcnt, long delta, boolean forwards) {
-        if (mService == null) {
-            return;
-        }
         if (repcnt > 0) {
             final long EXTRA_FAST_CUTOFF = 10000;
             if (delta < EXTRA_FAST_CUTOFF) {
@@ -527,7 +520,7 @@ public class AudioPlayerFragment extends Fragment implements ServiceConnection {
 
     /* Used to update the current time string */
     private long refreshCurrentTime() {
-        if (mService == null) {
+        if (!MusicUtils.isPlaybackServiceConnected()) {
             return MusicUtils.UPDATE_FREQUENCY_MS;
         }
         try {

@@ -13,8 +13,6 @@
 
 package org.lineageos.eleven.ui.activities;
 
-import static org.lineageos.eleven.utils.MusicUtils.mService;
-
 import android.app.ActionBar;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -37,7 +35,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
-import org.lineageos.eleven.IElevenService;
 import org.lineageos.eleven.MusicPlaybackService;
 import org.lineageos.eleven.MusicStateListener;
 import org.lineageos.eleven.R;
@@ -152,7 +149,6 @@ public abstract class BaseActivity extends FragmentActivity implements ServiceCo
      */
     @Override
     public void onServiceConnected(final ComponentName name, final IBinder service) {
-        mService = IElevenService.Stub.asInterface(service);
         // Set the playback drawables
         updatePlaybackControls();
         // Current info
@@ -166,7 +162,6 @@ public abstract class BaseActivity extends FragmentActivity implements ServiceCo
      */
     @Override
     public void onServiceDisconnected(final ComponentName name) {
-        mService = null;
     }
 
     /**
