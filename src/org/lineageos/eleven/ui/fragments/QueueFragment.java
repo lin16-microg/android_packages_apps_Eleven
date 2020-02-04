@@ -247,9 +247,6 @@ public class QueueFragment extends Fragment implements LoaderCallbacks<List<Song
 
         // Initialize the broadcast receiver
         mQueueUpdateListener = new QueueUpdateListener(this);
-
-        // Bind Eleven's service
-        mToken = MusicUtils.bindToService(getActivity(), this);
     }
 
     /**
@@ -267,6 +264,9 @@ public class QueueFragment extends Fragment implements LoaderCallbacks<List<Song
     @Override
     public void onStart() {
         super.onStart();
+
+        // Bind Eleven's service
+        mToken = MusicUtils.bindToService(getActivity(), this);
 
         final IntentFilter filter = new IntentFilter();
         // Play and pause changes
@@ -288,6 +288,15 @@ public class QueueFragment extends Fragment implements LoaderCallbacks<List<Song
 
         // stops the progress listeners
         setPlayPauseProgressButtonStates(true);
+
+        try {
+            getActivity().unregisterReceiver(mQueueUpdateListener);
+        } catch (final Throwable e) {
+            //$FALL-THROUGH$
+        }
+
+        MusicUtils.unbindFromService(mToken);
+        mToken = null;
     }
 
     /**
@@ -314,20 +323,6 @@ public class QueueFragment extends Fragment implements LoaderCallbacks<List<Song
                 }
             }
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        try {
-            getActivity().unregisterReceiver(mQueueUpdateListener);
-        } catch (final Throwable e) {
-            //$FALL-THROUGH$
-        }
-
-        MusicUtils.unbindFromService(mToken);
-        mToken = null;
     }
 
     /**
