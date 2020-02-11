@@ -714,8 +714,7 @@ public class MusicPlaybackService extends Service {
         mSession.setCallback(new MediaSession.Callback() {
             @Override
             public void onPause() {
-                pause();
-                mPausedByTransientLossOfFocus = false;
+                pause(false);
             }
             @Override
             public void onPlay() {
@@ -735,8 +734,7 @@ public class MusicPlaybackService extends Service {
             }
             @Override
             public void onStop() {
-                pause();
-                mPausedByTransientLossOfFocus = false;
+                pause(false);
                 seek(0);
                 releaseServiceUiAndStop();
             }
@@ -885,13 +883,11 @@ public class MusicPlaybackService extends Service {
             togglePlayPause();
         } else if (CMDPAUSE.equals(command) || PAUSE_ACTION.equals(action)
                 || AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
-            pause();
-            mPausedByTransientLossOfFocus = false;
+            pause(false);
         } else if (CMDPLAY.equals(command)) {
             play();
         } else if (CMDSTOP.equals(command) || STOP_ACTION.equals(action)) {
-            pause();
-            mPausedByTransientLossOfFocus = false;
+            pause(false);
             seek(0);
             releaseServiceUiAndStop();
         } else if (REPEAT_ACTION.equals(action)) {
@@ -923,7 +919,7 @@ public class MusicPlaybackService extends Service {
      */
     private void updateNotification() {
         final int newNotifyMode;
-        if (isPlaying()) {
+        if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
             newNotifyMode = NOTIFY_MODE_FOREGROUND;
         } else if (recentlyPlayed()) {
             newNotifyMode = NOTIFY_MODE_BACKGROUND;
@@ -1557,7 +1553,7 @@ public class MusicPlaybackService extends Service {
                 break;
         }
 
-        if (what.equals(PLAYSTATE_CHANGED)) {
+        if (what.equals(PLAYSTATE_CHANGED) || what.equals(META_CHANGED)) {
             updateNotification();
         }
 
@@ -2532,8 +2528,7 @@ public class MusicPlaybackService extends Service {
 
     private void togglePlayPause() {
         if (isPlaying()) {
-            pause();
-            mPausedByTransientLossOfFocus = false;
+            pause(false);
         } else {
             play();
         }
@@ -2542,13 +2537,14 @@ public class MusicPlaybackService extends Service {
     /**
      * Temporarily pauses playback.
      */
-    public void pause() {
+    public void pause(boolean dueToFocusLoss) {
         if (mPlayerHandler == null) return;
         if (D) Log.d(TAG, "Pausing playback");
         synchronized (this) {
             if (mPlayerHandler != null) {
                 mPlayerHandler.removeMessages(FADEUP);
             }
+            mPausedByTransientLossOfFocus = mIsSupposedToBePlaying && dueToFocusLoss;
             if (mIsSupposedToBePlaying) {
                 final Intent intent = new Intent(
                         AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
@@ -3060,7 +3056,6 @@ public class MusicPlaybackService extends Service {
                         }
                         service.updateCursor(service.mPlaylist.get(service.mPlayPos).mId);
                         service.notifyChange(META_CHANGED);
-                        service.updateNotification();
                         break;
                     case TRACK_ENDED:
                         if (service.mRepeatMode == REPEAT_CURRENT) {
@@ -3079,11 +3074,7 @@ public class MusicPlaybackService extends Service {
                         switch (msg.arg1) {
                             case AudioManager.AUDIOFOCUS_LOSS:
                             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                                if (service.isPlaying()) {
-                                    service.mPausedByTransientLossOfFocus =
-                                            msg.arg1 == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT;
-                                }
-                                service.pause();
+                                service.pause(msg.arg1 == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT);
                                 break;
                             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                                 removeMessages(FADEUP);
@@ -3538,7 +3529,7 @@ public class MusicPlaybackService extends Service {
          */
         @Override
         public void pause() throws RemoteException {
-            mService.get().pause();
+            mService.get().pause(false);
         }
 
         /**
